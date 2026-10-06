@@ -1,0 +1,2 @@
+"""Taste Report API package."""
+

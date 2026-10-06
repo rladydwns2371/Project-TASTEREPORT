@@ -1,0 +1,25 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-store/
+frontend/.env
+frontend/.env.local
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Backend
+backend/.venv/
+backend/.env
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/**/__pycache__/
+backend/**/*.py[cod]
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

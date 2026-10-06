@@ -1,0 +1,25 @@
+{
+  "name": "taste-report-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --configLoader native",
+    "build": "tsc --noEmit -p tsconfig.app.json && vite build --configLoader native",
+    "preview": "vite preview --configLoader native",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json --pretty false"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^7.0.0",
+    "typescript": "^5.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0"
+  },
+  "packageManager": "pnpm@11.25.0"
+}
+
