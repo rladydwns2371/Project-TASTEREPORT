@@ -1,6 +1,6 @@
 # Taste Report API
 
-마지막 갱신: 2026-09-29
+마지막 갱신: 2026-10-09
 
 ## 표기
 
@@ -28,39 +28,81 @@
 - 라우터: `backend/app/api/routes/health.py`
 - 테스트: `backend/tests/test_health.py`
 
-## Proposed
-
-아래 API는 아직 구현되지 않았다. 실제 구현 전 질문 ID, 공급자, 오류 정책을 확정한다.
-
-질문 ID와 분석 역할의 기준 목록은 `.ai/PRODUCT.md`의 영화·음악 질문지 화면 사양을 따른다. 프론트엔드와 백엔드는 한국어 표시 문구가 아니라 이 고정 ID로 계약한다.
-
 ### `GET /api/catalog/movies/search`
 
-영화 제목을 검색하고 동명 작품과 리메이크를 구분할 수 있는 최소 정보를 반환한다.
+Wikidata에서 영화 제목을 검색하고 Wikimedia Commons에서 재사용 가능한 이미지를 조회한다. 별도 API 키는 필요하지 않으며 서버가 공급자 요청과 이미지별 라이선스 정보를 정규화한다.
 
 Query:
 
-- `query`: 검색어
-- `page`: 선택, 기본값 1
+- `query`: 2~100자의 검색어
+- `page`: 현재 `1`만 지원
 
-응답 후보:
+### `GET /api/catalog/music/search`
+
+인증키가 필요 없는 Apple iTunes Search API에서 가수 또는 곡을 검색한다.
+
+Query:
+
+- `query`: 2~100자의 검색어
+- `entity`: `artist` 또는 `track`
+- `limit`: 1~25, 기본값 15
+
+두 검색 API의 응답 `200`:
 
 ```json
 {
   "items": [
     {
-      "provider": "provider-name",
-      "provider_id": "movie-id",
-      "title": "영화 제목",
-      "original_title": "Original Title",
-      "release_year": 2024,
-      "poster_url": "https://..."
+      "provider": "wikidata",
+      "provider_id": "Q488222",
+      "item_type": "movie",
+      "title": "괴물",
+      "subtitle": "괴물",
+      "detail": "봉준호",
+      "release_year": 2006,
+      "image_url": "https://upload.wikimedia.org/...",
+      "external_url": "https://www.wikidata.org/wiki/Q488222",
+      "image_credit": {
+        "creator": "KIYOUNG KIM",
+        "license": "CC BY 2.0",
+        "source_url": "https://commons.wikimedia.org/wiki/File:...",
+        "license_url": "https://creativecommons.org/licenses/by/2.0"
+      }
     }
   ],
   "page": 1,
-  "has_more": false
+  "has_more": false,
+  "attribution": {
+    "provider": "wikidata",
+    "label": "Wikidata · Wikimedia Commons",
+    "notice": "영화 정보는 Wikidata, 이미지는 Wikimedia Commons의 파일별 라이선스를 따릅니다.",
+    "url": "https://www.wikidata.org"
+  }
 }
 ```
+
+`provider`는 `wikidata | itunes`, `item_type`은 `movie | artist | track`이다. 영화 이미지는 출처·저작자·라이선스를 함께 표시할 수 있는 경우에만 제공한다. 음악 응답은 같은 형태를 사용하며 이미지·세부 정보가 없을 수 있다. 공급자 원시 응답은 노출하지 않는다.
+
+구현된 검색 오류:
+
+| HTTP | 코드 | 의미 |
+|---|---|---|
+| `422` | FastAPI 검증 오류 | 검색어 길이·페이지·entity·limit가 잘못됨 |
+| `429` | `RATE_LIMITED` | 외부 공급자 호출 제한 |
+| `503` | `CATALOG_PROVIDER_UNAVAILABLE` | 외부 공급자 타임아웃·장애·잘못된 응답 |
+
+현재 구현:
+
+- 라우터: `backend/app/api/routes/catalog.py`
+- 스키마: `backend/app/schemas/catalog.py`
+- 어댑터: `backend/app/providers/wikidata.py`, `backend/app/providers/itunes.py`
+- 테스트: `backend/tests/test_catalog.py`
+
+## Proposed
+
+아래 분석 API는 아직 구현되지 않았다. 실제 구현 전 질문 ID와 오류 정책을 확정한다.
+
+질문 ID와 분석 역할의 기준 목록은 `.ai/PRODUCT.md`의 영화·음악 질문지 화면 사양을 따른다. 프론트엔드와 백엔드는 한국어 표시 문구가 아니라 이 고정 ID로 계약한다.
 
 ### `POST /api/reports/movie/analyze`
 
@@ -98,7 +140,7 @@ Query:
 - `recommendations`: 실재 여부가 확인된 추천 3개와 연결 이유
 - `disclaimer`: AI 추정·재미용 안내
 
-## 공통 오류 계약 후보
+## 분석 API 공통 오류 계약 후보
 
 ```json
 {

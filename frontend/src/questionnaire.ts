@@ -1,4 +1,4 @@
-import type { CatalogItem, MovieQuestion } from './types'
+import type { MovieQuestion } from './types'
 
 export const MOVIE_GENRES = [
   '드라마',
@@ -14,7 +14,6 @@ export const MOVIE_GENRES = [
   '다큐멘터리',
   '기타 · 좋아하는 장르가 여기에 없어요',
 ]
-
 export const MOVIE_QUESTIONS: MovieQuestion[] = [
   {
     id: 'movie_primary_genre',
@@ -119,21 +118,4 @@ export const MOVIE_QUESTIONS: MovieQuestion[] = [
     placeholder: '영화를 검색해 하나씩 추가해 주세요',
     optional: true,
   },
-]
-
-export const MOCK_MOVIES: CatalogItem[] = [
-  { provider: 'mock', providerId: '496243', title: '기생충', subtitle: '봉준호', year: 2019, accent: '#ef5a3c' },
-  { provider: 'mock', providerId: '372058', title: '너의 이름은.', subtitle: '신카이 마코토', year: 2016, accent: '#6e8ee8' },
-  { provider: 'mock', providerId: '157336', title: '인터스텔라', subtitle: '크리스토퍼 놀란', year: 2014, accent: '#1f3b54' },
-  { provider: 'mock', providerId: '19404', title: '화양연화', subtitle: '왕가위', year: 2000, accent: '#be3636' },
-  { provider: 'mock', providerId: '550', title: '파이트 클럽', subtitle: '데이비드 핀처', year: 1999, accent: '#aa312c' },
-  { provider: 'mock', providerId: '129', title: '센과 치히로의 행방불명', subtitle: '미야자키 하야오', year: 2001, accent: '#58a789' },
-  { provider: 'mock', providerId: '38', title: '이터널 선샤인', subtitle: '미셸 공드리', year: 2004, accent: '#e990ab' },
-  { provider: 'mock', providerId: '244786', title: '위플래쉬', subtitle: '데이미언 셔젤', year: 2014, accent: '#d5a339' },
-  { provider: 'mock', providerId: '329865', title: '컨택트', subtitle: '드니 빌뇌브', year: 2016, accent: '#668477' },
-  { provider: 'mock', providerId: '491584', title: '버닝', subtitle: '이창동', year: 2018, accent: '#d55f32' },
-  { provider: 'mock', providerId: '666277', title: '패스트 라이브즈', subtitle: '셀린 송', year: 2023, accent: '#73a7bb' },
-  { provider: 'mock', providerId: '587807', title: '괴물', subtitle: '고레에다 히로카즈', year: 2023, accent: '#7a9f78' },
-  { provider: 'mock', providerId: '965150', title: '애프터썬', subtitle: '샬럿 웰스', year: 2022, accent: '#d79a68' },
-  { provider: 'mock', providerId: '569094', title: '스파이더맨: 어크로스 더 유니버스', subtitle: '호아킴 도스 산토스 외', year: 2023, accent: '#c94ba0' },
 ]

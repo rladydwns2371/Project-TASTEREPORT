@@ -82,15 +82,21 @@ button { color:inherit; }
 .search-results { margin-top:13px; border:1px solid var(--ink); background:var(--cream); }
 .search-results>p { margin:0; padding:12px 16px; display:flex; justify-content:space-between; border-bottom:1px solid #d6d2c7; font-size:.75rem; }
 .search-results>p span { color:var(--muted); }
-.search-results>button { width:100%; padding:10px 14px; border:0; border-bottom:1px solid #dedbd1; background:transparent; display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:14px; text-align:left; cursor:pointer; }
-.search-results>button:hover { background:#eeebdf; }
-.search-results>button>span { display:flex; flex-direction:column; gap:4px; }
-.search-results>button small { color:var(--muted); }
-.search-results>button>i { color:var(--coral); font-size:.8rem; font-style:normal; font-weight:700; }
+.movie-result { position:relative; border-bottom:1px solid #dedbd1; }
+.movie-result-choice { width:100%; padding:10px 14px 18px; border:0; background:transparent; display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:14px; text-align:left; cursor:pointer; }
+.movie-result-choice:hover { background:#eeebdf; }
+.movie-result-choice>span { display:flex; flex-direction:column; gap:4px; }
+.movie-result-choice small { color:var(--muted); }
+.movie-result-choice>i { color:var(--coral); font-size:.8rem; font-style:normal; font-weight:700; }
+.image-credit { position:absolute; left:80px; bottom:6px; max-width:calc(100% - 100px); overflow:hidden; color:#8b887f; font-size:.53rem; line-height:1; text-decoration:underline; text-overflow:ellipsis; white-space:nowrap; }
 .poster { width:46px; height:60px; padding:7px 5px; display:flex; flex-direction:column; justify-content:space-between; color:white; }
 .poster b { font-size:.75rem; writing-mode:vertical-rl; }
 .poster i { font-size:.45rem; font-style:normal; letter-spacing:.12em; }
+.poster-image { padding:0; background:#d5d2c8; }.poster-image img { width:100%; height:100%; display:block; object-fit:cover; }
 .empty-result { padding:24px; color:var(--muted); font-size:.88rem; text-align:center; }
+.search-hint,.search-status { padding:16px; color:var(--muted); font-size:.82rem; text-align:center; }
+.search-error { padding:18px; display:flex; align-items:center; justify-content:space-between; gap:16px; color:#9b3828; font-size:.82rem; }.search-error button { flex:0 0 auto; padding:7px 10px; border:1px solid currentColor; background:transparent; cursor:pointer; }
+.catalog-credit { padding:12px 16px; display:flex; align-items:center; gap:10px; border-top:1px solid #dedbd1; color:var(--muted); font-size:.62rem; line-height:1.4; }.catalog-credit a { flex:0 0 auto; padding:4px 7px; border:1px solid currentColor; color:var(--ink); font-weight:700; text-decoration:none; }.catalog-credit span { min-width:0; }
 .previous-picks { margin-top:18px; }
 .previous-picks small { display:block; margin-bottom:8px; color:var(--muted); }
 .previous-picks div { display:flex; flex-wrap:wrap; gap:7px; }
@@ -101,6 +107,7 @@ button { color:inherit; }
 .selected-movie small { color:var(--coral); font-size:.7rem; font-weight:700; }
 .selected-movie strong { font-size:1.25rem; }
 .selected-movie span { color:var(--muted); font-size:.85rem; }
+.selected-movie .selected-image-credit { width:max-content; max-width:100%; overflow:hidden; color:#77746b; font-size:.58rem; line-height:1.3; text-decoration:underline; text-overflow:ellipsis; white-space:nowrap; }
 .selected-movie button { padding:8px 10px; border:0; border-bottom:1px solid; background:none; cursor:pointer; font-size:.78rem; }
 .selection-count { margin-bottom:15px; color:var(--muted); text-align:right; }
 .selection-count strong { color:var(--ink); font-size:1.4rem; }
@@ -185,13 +192,66 @@ button { color:inherit; }
 .verdict-section { padding:140px 50px; text-align:center; background:var(--blue); color:white; }.verdict-section .kicker { color:var(--lime); }.verdict-section p:last-child { max-width:600px; margin:30px auto 0; color:rgba(255,255,255,.72); line-height:1.8; }
 .report-footer { padding:35px clamp(24px,5vw,70px); display:flex; justify-content:space-between; align-items:center; gap:24px; background:#111; }.report-footer>div:first-child { display:flex; flex-direction:column; gap:5px; }.report-footer small { color:rgba(255,255,255,.45); }.report-footer button { padding:12px 15px; border:1px solid rgba(255,255,255,.4); background:none; color:white; cursor:pointer; }.report-footer>div:last-child { display:flex; gap:8px; }.report-footer .accent-button { background:var(--lime); border-color:var(--lime); color:var(--ink); }
 
+/* Music questionnaire and report */
+.music-label i,.music-progress span { background:#7568df; }
+.music-question-page { background:#f3f0fa; }
+.question-guide { max-width:650px; margin:18px 0 0; color:var(--muted); line-height:1.65; }
+.music-question-page .multi-choice-wrap>p strong,.music-review-page .review-list button>span:first-child { color:#7568df; }
+.music-question-page .choice.selected { background:#5146b6; box-shadow:5px 5px 0 #b8ff78; }
+.music-question-page .choice.selected>span,.music-question-page .choice.selected i { color:#d9ff43; }
+.choice:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+.music-primary { background:#5146b6; box-shadow:5px 5px 0 #b8ff78; }
+.music-primary:hover:not(:disabled) { box-shadow:8px 8px 0 #b8ff78; }
+.music-skip { max-width:150px; line-height:1.3; }
+.music-skip-selection { margin-bottom:16px; padding:16px 18px; border:1px solid #7568df; background:#e2ddf5; display:flex; align-items:center; gap:12px; }.music-skip-selection span { color:var(--muted); font-size:.72rem; }.music-skip-selection strong { flex:1; }.music-skip-selection button { padding:7px 9px; border:0; border-bottom:1px solid; background:none; cursor:pointer; font-size:.76rem; }
+.music-search .movie-search>label { box-shadow:6px 6px 0 #5146b6; }
+.album-tile { width:54px; height:54px; padding:6px; display:flex; flex:0 0 auto; flex-direction:column; justify-content:space-between; color:white; overflow:hidden; }
+.album-tile b { font-family:'Jua',sans-serif; font-size:1.35rem; line-height:1; }
+.album-tile i { font-size:.42rem; font-style:normal; letter-spacing:.1em; }
+.music-selected-list { margin-bottom:18px; display:grid; gap:8px; }
+.music-selected-list>div { min-height:72px; padding:8px 12px; border:1px solid #aaa79d; background:rgba(255,255,255,.5); display:grid; grid-template-columns:auto 54px 1fr auto auto; align-items:center; gap:12px; }
+.music-selected-list>div>b { width:26px; color:#7568df; font-size:1.25rem; }
+.music-selected-list>div>span:not(.album-tile,.rank-controls) { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.music-selected-list small { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.music-selected-list .remove-music,.rank-controls button { border:0; background:none; cursor:pointer; }
+.rank-controls { display:flex; gap:2px; }
+.rank-controls button { width:28px; height:28px; border:1px solid #bbb6cb; }
+.rank-controls button:disabled { opacity:.25; cursor:default; }
+.music-review-page { background:#eeeaf7; }
+.music-review-page .kicker,.music-analyzing-page .kicker { color:#6658d2; }
+.music-review-page .review-footer>.back-button { color:white; }
+.music-analyzing-page { background:#f3f0fa; }
+.music-analysis-visual .analysis-core { border-color:#5146b6; background:#a9b7ff; font-size:4rem; }
+.music-analysis-visual .orbit::after { background:#7568df; }
+.music-analyzing-page .analysis-copy li.active span { color:#6658d2; }
+
+.music-report-page { background:#17151e; }
+.music-report-hero { min-height:720px; max-width:1280px; margin:auto; padding:90px 64px; display:grid; grid-template-columns:1.25fr .75fr; align-items:center; gap:90px; background:radial-gradient(circle at 25% 40%,rgba(117,104,223,.28),transparent 40%); }
+.music-report-hero h1 { margin:12px 0 24px; font-family:'Jua','Gowun Dodum',sans-serif; font-size:clamp(3.2rem,6vw,6rem); font-weight:400; line-height:1.03; letter-spacing:-.04em; }
+.music-report-hero>div:first-child>p:not(.kicker) { max-width:650px; color:rgba(255,255,255,.68); font-size:1.08rem; line-height:1.8; }
+.music-keywords { display:flex; flex-wrap:wrap; gap:8px; margin-top:30px; }.music-keywords span { padding:8px 12px; border:1px solid rgba(255,255,255,.32); border-radius:99px; font-size:.78rem; }
+.rarity-card { aspect-ratio:.82; padding:35px; border:1px solid rgba(255,255,255,.28); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#7568df; box-shadow:18px 18px 0 #d9ff43; transform:rotate(1.5deg); }
+.rarity-card>small { letter-spacing:.15em; }.rarity-card>strong { margin:14px 0 0; color:#d9ff43; font-size:clamp(7rem,12vw,11rem); line-height:.9; letter-spacing:-.08em; }.rarity-card>strong em { font-size:.28em; font-style:normal; }.rarity-card>b { font-family:'Jua',sans-serif; font-size:1.3rem; font-weight:400; }.rarity-card>p { margin:25px 0 20px; color:rgba(255,255,255,.78); line-height:1.6; }.rarity-card>span { color:rgba(255,255,255,.5); font-size:.68rem; line-height:1.5; }
+.music-share-section { background:#dcd6f1; }
+.music-story-card { background:#7568df; }.music-story-card::before { width:320px; height:120px; right:-90px; top:30%; border-radius:50%; transform:rotate(-18deg); box-shadow:0 0 0 38px rgba(255,255,255,.05),0 0 0 76px rgba(255,255,255,.035); }
+.music-card-rarity { margin-top:55px; position:relative; z-index:1; }.music-card-rarity small { display:block; }.music-card-rarity strong { display:block; color:#d9ff43; font-size:7rem; line-height:.95; letter-spacing:-.08em; }
+.music-story-card .story-character { margin-top:46px; }.music-save-button { background:#b8ff78; }
+.music-dna-report { display:grid; grid-template-columns:1fr .8fr; column-gap:90px; }.music-dna-report .section-heading { grid-column:1/-1; }.music-axis-grid { margin-top:65px; }.music-axis-grid>div { margin-bottom:30px; }.music-axis-grid p { margin:0 0 10px; display:flex; justify-content:space-between; color:var(--muted); font-size:.78rem; }.music-axis-grid p b { color:var(--ink); }.music-axis-grid i { display:block; height:4px; position:relative; background:#c8c2da; }.music-axis-grid i em { width:18px; height:18px; position:absolute; top:-7px; border-radius:50%; background:#7568df; transform:translateX(-50%); }.music-dna-report blockquote { align-self:center; margin:65px 0 0; padding:38px; border-left:2px solid #7568df; font-size:clamp(1.4rem,2.8vw,2.5rem); line-height:1.45; }
+.music-discovery-section { display:grid; grid-template-columns:60px .85fr 1.15fr; gap:55px; align-items:start; }.music-discovery-section h2 { margin-top:12px; }.music-compare-cards { display:grid; gap:12px; }.music-compare-cards article { padding:28px; border:1px solid rgba(255,255,255,.24); }.music-compare-cards article:last-child { background:#7568df; }.music-compare-cards small,.music-compare-cards strong { display:block; }.music-compare-cards small { color:#d9ff43; }.music-compare-cards strong { margin:12px 0; font-size:1.35rem; }.music-compare-cards p { color:rgba(255,255,255,.66); line-height:1.65; }
+.music-timeline-section { display:grid; grid-template-columns:1fr .8fr; align-items:center; gap:90px; }.music-timeline-section>div:first-of-type>p:last-child { max-width:650px; color:var(--muted); line-height:1.8; }.music-wave { height:240px; display:flex; align-items:center; justify-content:center; gap:14px; }.music-wave i { width:15px; border-radius:20px; background:#7568df; }.music-wave i:nth-child(1),.music-wave i:nth-child(7) { height:55px; }.music-wave i:nth-child(2),.music-wave i:nth-child(6) { height:120px; }.music-wave i:nth-child(3),.music-wave i:nth-child(5) { height:190px; }.music-wave i:nth-child(4) { height:235px; background:#ff6b4a; }
+.instinct-grid { margin-top:55px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }.instinct-grid article { min-height:260px; padding:30px; border:1px solid rgba(255,255,255,.24); }.instinct-grid b { color:#d9ff43; }.instinct-grid h3 { margin:70px 0 15px; font-size:1.5rem; }.instinct-grid p { color:rgba(255,255,255,.62); line-height:1.7; }
+.music-predictions .section-heading p:last-child { color:var(--muted); }.music-pick-grid { margin-top:60px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.music-pick-grid article { padding:16px; border:1px solid #aaa79d; }.music-pick-grid article>span { height:280px; margin-bottom:20px; display:grid; place-items:center; color:white; }.music-pick-grid article>span b { font-family:'Jua',sans-serif; font-size:5rem; }.music-pick-grid small { color:#6658d2; font-weight:700; }.music-pick-grid h3 { margin:8px 0 4px; font-size:1.5rem; }.music-pick-grid p { margin:0; color:var(--muted); }
+.music-ideal-section { padding:140px 24px; text-align:center; background:#7568df; }.music-ideal-section .kicker { color:#d9ff43; }.music-ideal-section h2 { margin:10px 0 25px; font-family:'Jua','Gowun Dodum',sans-serif; font-size:clamp(3rem,6vw,5.8rem); font-weight:400; line-height:1.05; }.music-ideal-section>p:not(.kicker) { max-width:650px; margin:0 auto; color:rgba(255,255,255,.75); line-height:1.8; }.music-ideal-section>small { display:block; margin-top:38px; color:rgba(255,255,255,.45); }.music-verdict { background:#262230; }
+
 @media (max-width:800px) {
   .top-bar { height:68px; }.progress { top:67px; }.theme-label { font-size:.6rem; }
   .theme-cards { grid-template-columns:1fr; padding:0 20px 60px; }.theme-card { min-height:340px; }.theme-intro { padding-top:54px; }.theme-doodle { display:none; }
   .question-shell { min-height:calc(100vh - 68px); grid-template-columns:1fr; padding-top:45px; }.question-count { flex-direction:row; justify-content:flex-start; }.question-count i { width:45px; height:1px; }.choice-grid { grid-template-columns:1fr; }.question-footer { align-items:flex-end; }.question-footer>div { flex-direction:column-reverse; align-items:flex-end; }.selected-movie { grid-template-columns:54px 1fr; }.selected-movie>button { grid-column:2; justify-self:start; }
   .review-heading { padding:70px 24px 40px; grid-template-columns:1fr; }.review-heading>p:last-child { margin-top:25px; }.review-list { padding:0 24px 70px; }.review-list button { grid-template-columns:42px 1fr; }.review-list button i { display:none; }.review-footer { position:static; flex-direction:column; align-items:stretch; }.review-footer .primary-button { width:100%; }
   .analysis-layout { grid-template-columns:1fr; padding:20px 28px 60px; }.analysis-visual { width:min(88vw,390px); margin:0 auto; }.analysis-copy { text-align:center; }.analysis-copy ul { display:inline-block; text-align:left; }
-  .report-hero { grid-template-columns:1fr; padding:60px 24px; gap:55px; }.score-block { max-width:400px; margin:auto; }.viewpoint { grid-template-columns:1fr; }.viewpoint>span:last-child { text-align:right; }.share-card-section { padding:80px 24px; grid-template-columns:1fr; gap:50px; }.story-card { width:min(100%,380px); margin:auto; }.report-section { padding:80px 24px; }.light-section { padding-left:24px; padding-right:24px; }.character-section,.insight-section,.boundary-section { grid-template-columns:1fr; gap:35px; }.character-art { max-width:420px; }.dna-section { grid-template-columns:1fr; }.dna-section blockquote { margin-top:30px; }.section-heading { grid-template-columns:38px 1fr; gap:15px; }.recommend-grid { grid-template-columns:1fr; }.fake-poster { height:220px; }.report-footer { flex-direction:column; align-items:stretch; }.report-footer>div:last-child { justify-content:flex-end; }
+  .report-hero { grid-template-columns:1fr; padding:60px 24px; gap:55px; }.score-block { max-width:400px; margin:auto; }.viewpoint { grid-template-columns:1fr; }.viewpoint>span:last-child { text-align:right; }.share-card-section { padding:80px 24px; grid-template-columns:1fr; gap:50px; }.story-card { width:min(100%,380px); margin:auto; }.report-section { padding:80px 24px; }.light-section { padding-left:24px; padding-right:24px; }.character-section,.insight-section,.boundary-section { grid-template-columns:1fr; gap:35px; }.character-art { max-width:420px; }.dna-section { grid-template-columns:1fr; }.dna-section blockquote { margin-top:30px; }.section-heading { grid-template-columns:38px 1fr; gap:15px; }.recommend-grid { grid-template-columns:1fr; }.fake-poster { height:220px; }.report-footer { flex-direction:column; align-items:stretch; }.report-footer>div:last-child { justify-content:flex-end; flex-wrap:wrap; }
+  .music-selected-list>div { grid-template-columns:auto 48px 1fr auto; }.music-selected-list .album-tile { width:48px; height:48px; }.rank-controls { grid-column:3; }.music-selected-list .remove-music { grid-column:4; grid-row:1; }
+  .music-report-hero { min-height:auto; padding:70px 24px 90px; grid-template-columns:1fr; gap:60px; }.rarity-card { width:min(100%,390px); margin:auto; }.music-dna-report,.music-discovery-section,.music-timeline-section { grid-template-columns:1fr; gap:35px; }.music-dna-report .section-heading { grid-column:auto; }.music-axis-grid,.music-dna-report blockquote { margin-top:20px; }.instinct-grid,.music-pick-grid { grid-template-columns:1fr; }.music-pick-grid article>span { height:210px; }.music-ideal-section { padding:100px 24px; }
 }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
 

@@ -9,8 +9,9 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     frontend_origins: str = "http://localhost:5173"
     openai_api_key: str | None = None
-    movie_api_key: str | None = None
-    music_api_key: str | None = None
+    wikimedia_user_agent: str = "TasteReport/0.1 (local-development)"
+    catalog_timeout_seconds: float = 8.0
+    catalog_max_retries: int = 1
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MOCK_MOVIES, MOVIE_QUESTIONS } from './questionnaire'
+import { MusicFlow } from './MusicFlow'
+import { MOVIE_QUESTIONS } from './questionnaire'
 import type { CatalogItem, MovieAnswer, MovieQuestion, MovieQuestionId } from './types'
+import { useMovieCatalogSearch } from './useCatalogSearch'
 
 type Screen = 'theme' | 'questionnaire' | 'music' | 'review' | 'analyzing' | 'report'
 
-const STORAGE_KEY = 'taste-report:movie-draft:v1'
+const STORAGE_KEY = 'taste-report:movie-draft:v3'
 
 function readDraft(): MovieAnswer[] {
   try {
@@ -58,7 +60,7 @@ export default function App() {
   if (screen === 'theme') {
     return <ThemeSelection onSelect={(theme) => setScreen(theme === 'movie' ? 'questionnaire' : 'music')} />
   }
-  if (screen === 'music') return <MusicPreview onBack={() => setScreen('theme')} />
+  if (screen === 'music') return <MusicFlow onExit={() => setScreen('theme')} />
   if (screen === 'analyzing') return <AnalyzingScreen onComplete={finishAnalysis} />
   if (screen === 'report') {
     return <ReportScreen answers={answers} onEdit={() => setScreen('review')} onRestart={restart} />
@@ -112,22 +114,8 @@ function ThemeSelection({ onSelect }: { onSelect: (theme: 'movie' | 'music') => 
           <span className="theme-card-number">02</span>
           <div className="theme-icon music-icon">♪</div>
           <div><small>MUSIC TASTE</small><h2>음악 취향<br />성적표</h2><p>반복해서 듣는 곡과 선곡 습관으로 알아보는 나의 음악 취향</p></div>
-          <strong>둘러보기 →</strong>
+          <strong>시작하기 →</strong>
         </button>
-      </section>
-    </main>
-  )
-}
-
-function MusicPreview({ onBack }: { onBack: () => void }) {
-  return (
-    <main className="music-preview-page">
-      <TopBar />
-      <section>
-        <div className="music-preview-icon">♫</div>
-        <h1>음악 취향 테스트도<br />곧 시작할 수 있어요.</h1>
-        <p>질문과 리포트 기획은 준비되어 있어요.<br />영화 흐름을 먼저 다듬은 뒤 같은 방식으로 연결할게요.</p>
-        <button className="primary-button" onClick={onBack} type="button">테마 다시 고르기 <span>↗</span></button>
       </section>
     </main>
   )
@@ -351,15 +339,16 @@ type MovieSearchProps = {
 
 function MovieSearch({ selected, usedMovies, placeholder, onSelect }: MovieSearchProps) {
   const [query, setQuery] = useState('')
-  const results = query.trim()
-    ? MOCK_MOVIES.filter((movie) => `${movie.title} ${movie.subtitle}`.toLowerCase().includes(query.toLowerCase())).slice(0, 5)
-    : []
+  const { items: results, loading, error, attribution, retry } = useMovieCatalogSearch(query)
 
   if (selected) {
     return (
       <div className="selected-movie">
         <Poster movie={selected} />
-        <div><small>선택한 영화</small><strong>{selected.title}</strong><span>{selected.year} · {selected.subtitle}</span></div>
+        <div>
+          <small>선택한 영화</small><strong>{selected.title}</strong><span>{movieMeta(selected)}</span>
+          {selected.imageCredit && <ImageCredit movie={selected} className="selected-image-credit" />}
+        </div>
         <button onClick={() => { setQuery(''); onSelect(undefined) }} type="button">다시 고르기</button>
       </div>
     )
@@ -378,16 +367,16 @@ function MovieSearch({ selected, usedMovies, placeholder, onSelect }: MovieSearc
           <div>{usedMovies.slice(0, 4).map((movie) => <button key={movie.providerId} onClick={() => onSelect(movie)} type="button">{movie.title}</button>)}</div>
         </div>
       )}
-      {query && (
+      {query.trim().length === 1 && <div className="search-hint">두 글자 이상 입력하면 검색해요.</div>}
+      {query.trim().length >= 2 && (
         <div className="search-results">
-          <p><strong>검색 결과</strong><span>현재는 샘플 카탈로그예요</span></p>
-          {results.length ? results.map((movie) => (
-            <button key={movie.providerId} onClick={() => onSelect(movie)} type="button">
-              <Poster movie={movie} />
-              <span><strong>{movie.title}</strong><small>{movie.year} · {movie.subtitle}</small></span>
-              <i>선택 +</i>
-            </button>
-          )) : <div className="empty-result">샘플 목록에는 없어요. ‘기생충’, ‘인터스텔라’, ‘괴물’을 검색해 보세요.</div>}
+          <p><strong>검색 결과</strong><span>{loading ? 'Wikidata에서 찾는 중…' : `${results.length}개 찾음`}</span></p>
+          {loading ? <div className="search-status">영화 카탈로그를 검색하고 있어요.</div> : error ? (
+            <div className="search-error"><span>{error}</span><button onClick={retry} type="button">다시 시도</button></div>
+          ) : results.length ? results.map((movie) => (
+            <MovieResult key={movie.providerId} movie={movie} onChoose={() => onSelect(movie)} verb="선택" />
+          )) : <div className="empty-result">검색 결과가 없어요. 원제나 다른 제목으로 다시 찾아보세요.</div>}
+          {attribution && !loading && !error && <CatalogCredit label={attribution.label} notice={attribution.notice} url={attribution.url} />}
         </div>
       )}
     </div>
@@ -397,9 +386,8 @@ function MovieSearch({ selected, usedMovies, placeholder, onSelect }: MovieSearc
 function MultiMovieSearch({ selected, usedMovies, onChange }: { selected: CatalogItem[], usedMovies: CatalogItem[], onChange: (movies: CatalogItem[]) => void }) {
   const [query, setQuery] = useState('')
   const excludedIds = new Set([...selected, ...usedMovies].map((movie) => movie.providerId))
-  const results = query.trim()
-    ? MOCK_MOVIES.filter((movie) => !excludedIds.has(movie.providerId) && `${movie.title} ${movie.subtitle}`.toLowerCase().includes(query.toLowerCase())).slice(0, 5)
-    : []
+  const { items, loading, error, attribution, retry } = useMovieCatalogSearch(query)
+  const results = items.filter((movie) => !excludedIds.has(movie.providerId))
 
   return (
     <div className="multi-search">
@@ -416,12 +404,15 @@ function MultiMovieSearch({ selected, usedMovies, onChange }: { selected: Catalo
       {selected.length < 5 && (
         <div className="movie-search">
           <label><span>⌕</span><input onChange={(event) => setQuery(event.target.value)} placeholder="영화를 검색해 추가해 주세요" value={query} /></label>
-          {query && <div className="search-results compact-results">
-            {results.length ? results.map((movie) => (
-              <button key={movie.providerId} onClick={() => { onChange([...selected, movie]); setQuery('') }} type="button">
-                <Poster movie={movie} /><span><strong>{movie.title}</strong><small>{movie.year} · {movie.subtitle}</small></span><i>추가 +</i>
-              </button>
-            )) : <div className="empty-result">추가할 수 있는 샘플 영화를 찾지 못했어요.</div>}
+          {query.trim().length === 1 && <div className="search-hint">두 글자 이상 입력하면 검색해요.</div>}
+          {query.trim().length >= 2 && <div className="search-results compact-results">
+            <p><strong>검색 결과</strong><span>{loading ? 'Wikidata에서 찾는 중…' : `${results.length}개 찾음`}</span></p>
+            {loading ? <div className="search-status">영화 카탈로그를 검색하고 있어요.</div> : error ? (
+              <div className="search-error"><span>{error}</span><button onClick={retry} type="button">다시 시도</button></div>
+            ) : results.length ? results.map((movie) => (
+              <MovieResult key={movie.providerId} movie={movie} onChoose={() => { onChange([...selected, movie]); setQuery('') }} verb="추가" />
+            )) : <div className="empty-result">추가할 수 있는 영화를 찾지 못했어요.</div>}
+            {attribution && !loading && !error && <CatalogCredit label={attribution.label} notice={attribution.notice} url={attribution.url} />}
           </div>}
         </div>
       )}
@@ -431,7 +422,38 @@ function MultiMovieSearch({ selected, usedMovies, onChange }: { selected: Catalo
 }
 
 function Poster({ movie }: { movie: CatalogItem }) {
+  if (movie.imageUrl) return <span className="poster poster-image"><img alt={`${movie.title} 관련 이미지`} src={movie.imageUrl} /></span>
   return <span className="poster" style={{ background: movie.accent }}><b>{movie.title.slice(0, 2)}</b><i>FILM</i></span>
+}
+
+function MovieResult({ movie, onChoose, verb }: { movie: CatalogItem, onChoose: () => void, verb: '선택' | '추가' }) {
+  return (
+    <div className="movie-result">
+      <button className="movie-result-choice" onClick={onChoose} type="button">
+        <Poster movie={movie} />
+        <span><strong>{movie.title}</strong><small>{movieMeta(movie)}</small></span>
+        <i>{verb} +</i>
+      </button>
+      {movie.imageCredit && <ImageCredit movie={movie} className="image-credit" />}
+    </div>
+  )
+}
+
+function ImageCredit({ movie, className }: { movie: CatalogItem, className: string }) {
+  if (!movie.imageCredit) return null
+  return (
+    <a className={className} href={movie.imageCredit.sourceUrl} rel="noreferrer" target="_blank">
+      이미지 {movie.imageCredit.creator} · {movie.imageCredit.license}
+    </a>
+  )
+}
+
+function movieMeta(movie: CatalogItem) {
+  return [movie.year, movie.subtitle, movie.detail].filter(Boolean).join(' · ') || '상세 정보 없음'
+}
+
+function CatalogCredit({ label, notice, url }: { label: string, notice: string, url: string }) {
+  return <div className="catalog-credit"><a href={url} rel="noreferrer" target="_blank">{label}</a><span>{notice}</span></div>
 }
 
 function ReviewScreen({ answers, onEdit, onAnalyze }: { answers: MovieAnswer[], onEdit: (index: number) => void, onAnalyze: () => void }) {

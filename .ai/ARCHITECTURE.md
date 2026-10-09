@@ -8,7 +8,7 @@ Browser
        └─ /api proxy
             └─ FastAPI (:8000)
                  ├─ configuration / secrets
-                 ├─ content provider adapters (planned)
+                 ├─ Wikidata·Commons / iTunes catalog adapters
                  ├─ analysis service (planned)
                  └─ structured response validation (planned)
 ```
@@ -68,7 +68,7 @@ backend/app/
 
 - 프론트엔드는 OpenAI 및 콘텐츠 공급자 비밀키를 알지 못한다.
 - API 라우터에 프롬프트 조립과 공급자별 세부 구현을 넣지 않는다.
-- 도메인 서비스는 TMDB, Spotify 같은 특정 공급자의 원시 응답 형식에 의존하지 않는다.
+- 도메인 서비스는 Wikidata, iTunes 같은 특정 공급자의 원시 응답 형식에 의존하지 않는다.
 - 공급자 ID와 사람이 읽는 표시 값을 함께 보존해 동명 작품·리메이크·라이브·리믹스를 구분한다.
 - AI 결과를 저장하거나 표시하기 전 서버 스키마를 통과시킨다.
 - 영구 저장이 없더라도 서버 로그와 외부 API 요청에 사용자 답변이 남을 수 있으므로 로깅 범위를 제한한다.
@@ -84,8 +84,9 @@ backend/app/
 | `API_PREFIX` | 기본값 `/api` |
 | `FRONTEND_ORIGINS` | CORS 허용 출처, 쉼표 구분 |
 | `OPENAI_API_KEY` | AI 분석 공급자 키 |
-| `MOVIE_API_KEY` | 영화 카탈로그 공급자 키 |
-| `MUSIC_API_KEY` | 음악 카탈로그 공급자 키 |
+| `WIKIMEDIA_USER_AGENT` | Wikimedia 요청 식별자. 공개 배포에서는 서비스 URL 또는 연락처 포함 |
+| `CATALOG_TIMEOUT_SECONDS` | 외부 카탈로그 요청 타임아웃, 기본 8초 |
+| `CATALOG_MAX_RETRIES` | 일시적 외부 호출 실패 재시도 횟수, 기본 1회 |
 
 프론트엔드의 `VITE_API_BASE_URL`은 공개 가능한 API 기준 경로이며 기본값은 `/api`다.
 
@@ -119,7 +120,6 @@ backend/app/
 
 ## 8. 아직 결정되지 않은 항목
 
-- 영화·음악 카탈로그 공급자
 - OpenAI 모델과 구조화 출력 방식
 - 공개 정보 조사 범위와 출처 정책
 - 분석 1회 비용·시간 예산
@@ -128,33 +128,33 @@ backend/app/
 
 결정 전에는 특정 공급자 SDK를 핵심 도메인 계층에 확산시키지 않는다.
 
-## 9. 콘텐츠 검색 공급자 도입 방향
+## 9. 콘텐츠 검색 공급자
 
 프론트엔드는 공급자 원시 응답을 직접 사용하지 않고 다음 공통 형태만 사용한다.
 
 ```text
-CatalogItem = provider + providerId + title + subtitle + year + imageUrl
+CatalogItem = provider + providerId + title + subtitle + detail + year + imageUrl + imageCredit
 ```
 
-- 영화 공급자: TMDB를 1순위로 사용한다. 한국어 제목 검색, 포스터, 개봉연도와 고유 ID를 제공해 동명 영화와 리메이크를 구분하기 쉽다. 비상업 개발은 출처 표기 조건으로 무료이며, 키와 호출은 Claude 분석 코드와 분리한 FastAPI 어댑터에 둔다.
-- 음악 공급자: Apple iTunes Search API를 1순위로 검증한다. 인증 없이 곡·가수·앨범 검색이 가능하므로 브라우저에서 직접 호출할 수 있다. 약 20회/분 제한을 지키기 위해 디바운스, 요청 취소와 세션 캐시를 둔다. 공식 문서가 아카이브 상태이므로 표시 자산 이용 조건과 한국 음악 검색 품질을 구현 전에 확인한다.
+- 영화 공급자: 광고가 있는 서비스에서도 사용할 수 있는 CC0 구조화 데이터인 Wikidata를 사용한다. 한국어·영어 엔터티 검색을 합친 뒤 SPARQL로 영화만 필터링하고, 제목·개봉연도·감독·제작국·고유 QID를 정규화한다. 한글 검색에서는 대한민국 영화를 우선하는 별도 랭킹을 적용한다.
+- 영화 이미지: Wikimedia Commons의 파일별 라이선스와 저작자 정보를 함께 조회한다. 라이선스·출처를 표시할 수 있는 이미지만 노출하므로 결과에 따라 이미지가 없을 수 있고, 공식 포스터가 아닌 홍보 사진이나 스틸일 수 있다. 화면에서는 각 이미지 바로 아래에 출처 링크를 표시한다.
+- Wikimedia 호출은 의미 있는 `User-Agent`를 보내고 동일 검색 결과를 서버 메모리에 5분간 캐시한다. 공개 배포 전 `WIKIMEDIA_USER_AGENT`에 실제 서비스 URL 또는 연락처를 설정한다.
+- 음악 공급자: 인증키가 필요 없는 Apple iTunes Search API를 사용한다. KR 스토어가 주요 한국 가수 검색에도 빈 결과를 반환해 한국어·영어 검색이 모두 동작한 US 스토어를 사용한다. 화면 입력은 350ms 디바운스·이전 요청 취소를 적용하고, 서버는 동일 검색을 60초간 메모리 캐시한다.
+- Apple의 홍보용 콘텐츠 조건에 불필요하게 묶이지 않도록 현재 음악 검색에서는 앨범 이미지와 미리듣기를 가져오지 않고 제목·가수·앨범·연도·공식 링크만 사용한다.
 - 음악 대안: MusicBrainz는 키가 없지만 의미 있는 `User-Agent`와 초당 1회 제한 때문에 FastAPI 프록시가 필요하다. Spotify는 2026년 Development Mode의 Premium·사용자·쿼터 제약 때문에 MVP 기본 공급자로 사용하지 않는다.
 
-현재 프론트엔드 와이어프레임의 샘플 검색은 `CatalogItem` 계약을 흉내 낸 로컬 데이터다. 실제 연동 시 화면 상태를 바꾸지 않고 검색 함수만 `/api/catalog/.../search` 호출로 교체한다.
+두 공급자 모두 FastAPI를 거쳐 공통 `CatalogItem`으로 변환한다. 프론트엔드는 공급자 원시 응답을 모르며, 오래된 TMDB 선택 데이터가 남지 않도록 영화 세션 초안 키를 v3로 올렸다.
 
 ```text
-영화: Browser → /api/catalog/movies/search → FastAPI TMDB adapter → TMDB
-음악: Browser → debounced iTunes Search request → Apple catalog
+영화: Browser → /api/catalog/movies/search → FastAPI Wikidata adapter → Wikidata + Wikimedia Commons
+음악: Browser → /api/catalog/music/search → FastAPI iTunes adapter → Apple catalog
 분석: Browser → /api/reports/{theme}/analyze → FastAPI AI service → Claude
 ```
 
-## 10. 프론트엔드 와이어프레임에서 실제 분석으로 전환하는 순서
+## 10. 실제 분석으로 전환하는 순서
 
-1. `frontend/src/questionnaire.ts`의 `MOCK_MOVIES` 검색을 `searchMovies(query, signal)` 함수로 분리하고, 이 함수가 `/api/catalog/movies/search`를 호출하게 바꾼다. 입력 디바운스, 로딩, 빈 결과, 공급자 오류와 재시도를 함께 구현한다.
-2. 검색 응답은 공급자 원시 형식이 아닌 `CatalogItem`으로 매핑한다. 화면은 `provider`와 `providerId`를 보존하되 TMDB 세부 필드에는 의존하지 않는다.
-3. 현재 `App.tsx`의 3.2초 타이머를 `POST /api/reports/movie/analyze` 호출로 교체한다. 요청에는 질문 ID, 역할, 선택 콘텐츠, 사용자 문구와 명시적 `skipped` 상태를 모두 보낸다.
-4. 모의 결과 JSX를 서버 응답 타입으로 분리한다. 전체 성공, 제한된 축소 결과, 타임아웃, 구조 검증 실패와 사용자 재시도 상태를 각각 화면으로 만든다.
-5. 서버가 추천 작품의 실재 여부와 기존 선택 제외를 검증한 뒤 반환하게 한다. 프론트는 추천 제목을 새로 만들어내지 않는다.
-6. 실제 계약이 정해지면 `.ai/API.md`의 Proposed 예시를 Pydantic 스키마와 동일한 Implemented 계약으로 교체하고 프론트 fixture를 추가한다.
-7. 영화 흐름과 계약을 검증한 뒤 같은 공용 검색·설문 셸을 이용해 음악 질문지를 추가한다. 음악 공급자 차이는 어댑터와 `CatalogItem` 매핑 안에만 둔다.
+1. 현재 `App.tsx`와 `MusicFlow.tsx`의 모의 분석 타이머를 `POST /api/reports/{theme}/analyze` 호출로 교체한다. 요청에는 질문 ID, 역할, 선택 콘텐츠, 사용자 문구와 명시적 `skipped` 상태를 모두 보낸다.
+2. 모의 결과 JSX를 서버 응답 타입으로 분리한다. 전체 성공, 제한된 축소 결과, 타임아웃, 구조 검증 실패와 사용자 재시도 상태를 각각 화면으로 만든다.
+3. 서버가 추천 작품과 곡의 실재 여부와 기존 선택 제외를 검증한 뒤 반환하게 한다. 프론트는 추천 제목을 새로 만들어내지 않는다.
+4. 실제 분석 계약이 정해지면 `.ai/API.md`의 Proposed 예시를 Pydantic 스키마와 동일한 Implemented 계약으로 교체한다.
 
